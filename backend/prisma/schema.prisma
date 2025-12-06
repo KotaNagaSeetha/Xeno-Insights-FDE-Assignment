@@ -1,0 +1,150 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Multi-tenant: Each tenant represents a Shopify store
+model Tenant {
+  id          String   @id @default(uuid())
+  name        String
+  shopDomain  String   @unique // e.g., "mystore.myshopify.com"
+  accessToken String   // Shopify access token
+  apiKey      String?  // Shopify API key (optional)
+  apiSecret   String?  // Shopify API secret (optional)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users       User[]
+  customers   Customer[]
+  orders      Order[]
+  products    Product[]
+  events      CustomEvent[]
+
+  @@index([shopDomain])
+  @@map("tenants")
+}
+
+// Users with email authentication
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // hashed
+  name      String?
+  tenantId  String
+  role      String   @default("user") // user, admin
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([tenantId])
+  @@map("users")
+}
+
+// Shopify Customers
+model Customer {
+  id                String   @id @default(uuid())
+  shopifyId         String   // Shopify customer ID
+  tenantId          String
+  email             String?
+  firstName         String?
+  lastName          String?
+  phone             String?
+  totalSpent        Float    @default(0)
+  ordersCount       Int      @default(0)
+  acceptsMarketing  Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  syncedAt          DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@unique([shopifyId, tenantId])
+  @@index([tenantId])
+  @@index([email])
+  @@map("customers")
+}
+
+// Shopify Orders
+model Order {
+  id              String   @id @default(uuid())
+  shopifyId       String   // Shopify order ID
+  tenantId        String
+  customerId      String?
+  orderNumber     String
+  financialStatus String?  // paid, pending, refunded, etc.
+  fulfillmentStatus String? // fulfilled, unfulfilled, partial
+  totalPrice      Float
+  subtotalPrice   Float
+  totalTax        Float
+  currency        String   @default("USD")
+  orderDate       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  syncedAt        DateTime @default(now())
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@unique([shopifyId, tenantId])
+  @@index([tenantId])
+  @@index([customerId])
+  @@index([orderDate])
+  @@map("orders")
+}
+
+// Shopify Products
+model Product {
+  id          String   @id @default(uuid())
+  shopifyId   String   // Shopify product ID
+  tenantId    String
+  title       String
+  handle      String?  // URL slug
+  vendor      String?
+  productType String?
+  status      String?  // active, archived, draft
+  price       Float?
+  compareAtPrice Float?
+  inventoryQuantity Int @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  syncedAt    DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([shopifyId, tenantId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("products")
+}
+
+// Custom Events (Bonus: cart abandoned, checkout started, etc.)
+model CustomEvent {
+  id        String   @id @default(uuid())
+  tenantId  String
+  eventType String  // cart_abandoned, checkout_started, product_viewed, etc.
+  customerId String?
+  orderId   String?
+  productId String?
+  metadata  String?  // JSON string for additional data
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("custom_events")
+}
+

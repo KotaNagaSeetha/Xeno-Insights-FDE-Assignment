@@ -99,9 +99,6 @@ A professional, production-ready multi-tenant service for ingesting and analyzin
 - **Database**: PostgreSQL 15 (local installation)
 
 ## 📦 Setup Instructions
-
-> **Quick Setup**: See [LOCAL_SETUP.md](./LOCAL_SETUP.md) for a detailed step-by-step guide.
-
 ### Prerequisites
 
 - Node.js 18+ and npm
@@ -507,10 +504,21 @@ git push heroku main
 This project is created for the Xeno FDE Internship Assignment.
 
 ## 👤 Author
+Author: NAGA SEETHA KOTA
 
 Built for Xeno FDE Internship Assignment - 2025
 
 ---
 
 **Note**: This is a demonstration project. For production use, implement all security measures, testing, and monitoring as outlined in the "Next Steps for Production" section.
+
+
+## 🚀 Live Demo & Project Links
+
+- 🌐 **Live Frontend (Vercel):**  
+  👉 https://xeno-insights-fde-assignment.vercel.app
+
+- 🎥 **Demo Video:**  
+  👉 https://drive.google.com/file/d/1nk3tX6pc8T0xZB7IvBzLJUu8gPxYddTY/view?usp=drivesdk
+
 
